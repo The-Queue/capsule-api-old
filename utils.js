@@ -24,13 +24,12 @@ const utils = {
                 method: 'POST',
                 url: 'https://accounts.spotify.com/api/token',
                 headers: {
-                    cookie: '__Host-device_id=AQBpNpsP2HC-cfQP6w9h_ms_6KmfzOjPcTkJAj1MjzVc2Ezdi8OKJDHE6Z6RrpgIEPDLWjkrykWmlKgDIox2v7poe1RmDw-ykoQ; sp_tr=false',
-                    'Content-Type': 'application/x-www-form-urlencoded',
                     Accept: 'application/json',
-                    Authorization: 'Basic OTZjNjRhZmJiMmU0NDMyOGJjNjc1MzFmOWNhZDY0Y2E6YmE0MDY0OWI3MmJhNGNjNDk5NTAwNTJmZTc4MmIzMzk='
+                    Authorization: `Basic ${credential}`
                 },
                 data: qs.stringify({
-                    grant_type: 'client_credentials'
+                    grant_type: 'refresh_token',
+                    refresh_token: process.env.SPOTIFY_REFRESH_TOKEN
                 })
             };
 
@@ -44,6 +43,20 @@ const utils = {
             return false;
         }
 
+    },
+
+    async getPlayback() {
+        const token = await this.getAuthToken();
+
+        const response = await axios.get('https://api.spotify.com/v1/me/player', {
+            headers: {
+                'Authorization': `Bearer ${token.access_token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+
+        return response.data;
     }
 
 }

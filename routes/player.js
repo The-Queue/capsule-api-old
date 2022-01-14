@@ -28,8 +28,4 @@ router.get('/playing', async (req, res) => {
     }
 });
 
-router.get('/code', (req, res) => {
-    return res.json(req.query);
-});
-
 module.exports = router;
