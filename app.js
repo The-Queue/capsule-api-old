@@ -17,6 +17,7 @@ const search  = require('./routes/search');
 const player  = require('./routes/player');
 const queue   = require('./routes/queue');
 const utils   = require('./utils');
+const { getFirstInQueue, popQueue } = require('./utils');
 
 app.use(cors());
 app.use(express.json());
@@ -37,7 +38,31 @@ io.on('connection', socket => {
 
 setInterval(() => {
     utils.getPlayback().then(playback => {
-        console.log('titre du playback : ' + playback.item.name);
+        
+        if(!playback) {
+            io.emit('playback', {
+                name: 'Pas de lecture en cours',
+                artists: [
+                    {
+                        name: 'Cliquez sur un titre pour l\'écouter'
+                    }
+                ]
+            });
+        }
+
+        if (playback.item.name) {
+            getFirstInQueue().then(song => {
+                if (song !== null) {
+                    if (playback.item.name === song.name) {
+                        console.log('prochaine en file détectée');
+                        popQueue().then(() => {
+                            io.emit('del_queue', song);
+                        });
+                    }
+                }
+            });
+        }
+
         io.emit('playback', playback);
     });
 }, 5000);

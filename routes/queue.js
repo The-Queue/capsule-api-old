@@ -2,7 +2,7 @@ const { Router } = require('express');
 const axios      = require('axios').default;
 const qs         = require('qs');
 
-const { getAuthToken } = require('../utils');
+const { getAuthToken, getRedisClient, addToQueue } = require('../utils');
 
 const router = new Router();
 
@@ -24,6 +24,11 @@ router.post('/', async (req, res) => {
             }
         });
 
+        await addToQueue({
+            name: data.name,
+            artists: data.artists.map(artist => artist.name).join(', ')
+        });
+
         return res.status(200).json({
             success: true
         });
@@ -33,6 +38,22 @@ router.post('/', async (req, res) => {
             error: 'Une erreur est survenue lors de l\'ajout du titre à la file d\'attente'
         });
     } 
+});
+
+/**
+ * Liste des musiques en file d'attente
+ */
+router.get('/', async (req, res) => {
+    try {
+        const redis = await getRedisClient();
+        const queue = await redis.lRange('queue', 0, -1);
+
+        return res.json(queue.map(item => JSON.parse(item)));
+    } catch (e) {
+        return res.status(500).json({
+            message: e.message
+        });
+    }
 })
 
 module.exports = router;

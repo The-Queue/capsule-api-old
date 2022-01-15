@@ -3,6 +3,8 @@ const axios = require('axios').default;
 const moment = require('moment');
 const qs = require('qs');
 
+const { createClient } = require('redis');
+
 const utils = {
 
     token: {
@@ -56,9 +58,42 @@ const utils = {
             }
         });
 
+        if (response.status === 204) {
+            return false;
+        }
+
         return response.data;
+    },
+
+    async getRedisClient() {
+        const client = createClient();
+
+        client.on('error', console.error);
+        
+        await client.connect();
+
+        return client;
+    },
+
+    async getFirstInQueue() {
+        const client = await utils.getRedisClient();
+        const first  = await client.lIndex('queue', 0);
+
+        return JSON.parse(first);
+    },
+
+    async popQueue() {
+        const client = await utils.getRedisClient();
+
+        await client.blPop('queue', 0);
+    },
+
+    async addToQueue(item) {
+        const client = await utils.getRedisClient();
+
+        await client.rPush('queue', JSON.stringify(item));
     }
 
-}
+};
 
 module.exports = utils;
